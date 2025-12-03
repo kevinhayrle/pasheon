@@ -25,12 +25,12 @@ git push
 → Netlify will auto-deploy the changes.
 
 # Developer
-Kevin Antony — Full-stack Developer & Creator of Pasheon  
-Logo design: Nishanth Antony
+**Kevin Antony**  
+*Full-stack Developer & Creator of Pasheon*   
 
 # License
-Frontend code is © 2025 Kevin Antony.  
-All rights reserved. Reuse, distribution, or replication is prohibited without written permission.
+Frontend code © 2025 **Kevin Antony**  
+All rights reserved. Redistribution or replication is not permitted without written consent.  
 
 # Live Site
 https://pasheon.netlify.app/
