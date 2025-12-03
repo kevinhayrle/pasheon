@@ -549,9 +549,11 @@ margin-top: 50px;
 
 .cortex {
   font-size: 12px;
-  color: #aaa;
+  color: #1a1a1a;
   cursor: pointer;
   display: block;
-  text-align: left;
+  text-align:center;
+  margin-bottom: 10px;
+
   
 }
