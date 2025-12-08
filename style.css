@@ -569,7 +569,6 @@ margin-top: 50px;
 .product-price {
   display: flex;
   gap: 6px;
-  justify-content: left;
-  align-items: left;
-  margin-right: 50px;
+  justify-content: flex-start;
+  align-items: center;
 }
