@@ -314,7 +314,9 @@ function editProduct(
     const list = document.getElementById("productList");
     list.innerHTML = "";
 
-    data.forEach(p => {
+    data
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+    .forEach(p => {
       const div = document.createElement("div");
       div.className = "product";
       div.innerHTML = `
