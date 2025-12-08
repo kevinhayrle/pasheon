@@ -184,6 +184,8 @@
         <div class="form-group">
           <label for="price">Price (₹)</label>
           <input type="number" id="price" required />
+          <label for="sort_order">Display Order</label>
+<input type="number" id="sort_order" placeholder="1, 2, 3..." />
         </div>
 
         <!-- ✅ ADDED ONLY -->
@@ -240,22 +242,26 @@
     const name = document.getElementById("name").value;
     const price = document.getElementById("price").value;
     const discounted_price = document.getElementById("discounted_price").value || null; // ✅ ADDED
+    const sort_order = document.getElementById("sort_order").value || 0;
+
     const category = document.getElementById("category").value;
     const image_url = document.getElementById("image").value;
     const description = document.getElementById("description").value;
     const sizes = document.getElementById("sizes").value.split(',').map(s => s.trim());
     const extra_images = document.getElementById("extraImages").value.split(',').map(s => s.trim());
 
-    const productData = {
-      name,
-      price,
-      discounted_price, // ✅ ADDED
-      category,
-      image_url,
-      description,
-      sizes,
-      extra_images
-    };
+const productData = {
+  name,
+  price,
+  discounted_price,
+  sort_order,
+  category,
+  image_url,
+  description,
+  sizes,
+  extra_images
+};
+
 
     const endpoint = id ? `/admin/update/${id}` : "/admin/add";
     const method = id ? "PUT" : "POST";
@@ -273,18 +279,30 @@
     document.getElementById("editingId").value = "";
     fetchProducts();
   });
+function editProduct(
+  id,
+  name,
+  price,
+  discounted_price,
+  category,
+  image,
+  description,
+  sizes,
+  extra_images,
+  sort_order
+) {
+  document.getElementById("editingId").value = id;
+  document.getElementById("name").value = name;
+  document.getElementById("price").value = price;
+  document.getElementById("discounted_price").value = discounted_price || "";
+  document.getElementById("category").value = category;
+  document.getElementById("image").value = image || "";
+  document.getElementById("description").value = description || "";
+  document.getElementById("sizes").value = sizes.join(',');
+  document.getElementById("extraImages").value = extra_images.join(',');
+  document.getElementById("sort_order").value = sort_order || 0;   // ✅ THIS IS THE MOST IMPORTANT LINE
+}
 
-  function editProduct(id, name, price, discounted_price, category, image, description, sizes, extra_images) {
-    document.getElementById("editingId").value = id;
-    document.getElementById("name").value = name;
-    document.getElementById("price").value = price;
-    document.getElementById("discounted_price").value = discounted_price || ""; // ✅ ADDED
-    document.getElementById("category").value = category;
-    document.getElementById("image").value = image || "";
-    document.getElementById("description").value = description || "";
-    document.getElementById("sizes").value = sizes.join(',');
-    document.getElementById("extraImages").value = extra_images.join(',');
-  }
 
   async function fetchProducts() {
     const res = await fetch(`${API}/admin/products`, {
