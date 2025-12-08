@@ -242,8 +242,7 @@
     const name = document.getElementById("name").value;
     const price = document.getElementById("price").value;
     const discounted_price = document.getElementById("discounted_price").value || null; // ✅ ADDED
-    const sort_order = document.getElementById("sort_order").value || 0;
-
+    const sort_order = Number(document.getElementById("sort_order").value) || 0;
     const category = document.getElementById("category").value;
     const image_url = document.getElementById("image").value;
     const description = document.getElementById("description").value;
@@ -296,7 +295,7 @@ function editProduct(
   document.getElementById("price").value = price;
   document.getElementById("discounted_price").value = discounted_price || "";
   document.getElementById("category").value = category;
-   document.getElementById("sort_order").value = sort_order || 0;   // ✅ THIS IS THE MOST IMPORTANT LINE
+ document.getElementById("sort_order").value = sort_order ?? "";
   document.getElementById("image").value = image || "";
   document.getElementById("description").value = description || "";
   document.getElementById("sizes").value = sizes.join(',');
