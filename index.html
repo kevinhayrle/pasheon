@@ -193,7 +193,15 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="product-click-area" data-id="${product.id}">
             <img src="${product.image_url}" alt="${product.name}" class="product-image">
             <h3 class="product-name">${product.name}</h3>
-            <p class="product-price">₹${parseFloat(product.price).toLocaleString()}</p>
+           <p class="product-price">
+  ${
+    product.discounted_price
+      ? `<span class="old-price">₹${parseFloat(product.price).toLocaleString()}</span>
+         <span class="new-price">₹${parseFloat(product.discounted_price).toLocaleString()}</span>`
+      : `<span class="new-price">₹${parseFloat(product.price).toLocaleString()}</span>`
+  }
+</p>
+
           </div>
           <button class="add-to-cart" data-id="${product.id}">Add to Cart</button>
         `;

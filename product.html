@@ -81,7 +81,19 @@
           document.getElementById('product-image').src = product.image_url;
           document.getElementById('product-name').textContent = product.name;
           document.getElementById('product-description').textContent = product.description;
-          document.getElementById('product-price').textContent = `₹${parseFloat(product.price).toLocaleString()}`;
+         const priceEl = document.getElementById('product-price');
+
+if (product.discounted_price) {
+  priceEl.innerHTML = `
+    <span class="old-price">₹${parseFloat(product.price).toLocaleString()}</span>
+    <span class="new-price">₹${parseFloat(product.discounted_price).toLocaleString()}</span>
+  `;
+} else {
+  priceEl.innerHTML = `
+    <span class="new-price">₹${parseFloat(product.price).toLocaleString()}</span>
+  `;
+}
+
 
           const extraImagesContainer = document.getElementById('extra-images');
           if (Array.isArray(product.extra_images)) {
@@ -112,15 +124,20 @@ document.querySelector('.add-to-cart').addEventListener('click', () => {
 
   let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
-  cart.push({
-    id: product.id, 
-    name: product.name,
-    price: product.price,
-    image_url: product.image_url,
-    category: product.category,
-    size: selectedSize,
-    quantity: 1
-  });
+const finalPrice = product.discounted_price
+  ? product.discounted_price
+  : product.price;
+
+cart.push({
+  id: product.id, 
+  name: product.name,
+  price: finalPrice, // ✅ FIXED
+  image_url: product.image_url,
+  category: product.category,
+  size: selectedSize,
+  quantity: 1
+});
+
 
   localStorage.setItem('cart', JSON.stringify(cart));
   window.location.href = 'cart.html';

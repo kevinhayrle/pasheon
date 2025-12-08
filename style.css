@@ -554,3 +554,21 @@ margin-top: 50px;
   display: block;
   text-align:center;
 }
+.old-price {
+  text-decoration: line-through;
+  color: #888;
+  font-size: 14px;
+}
+
+.new-price {
+  font-weight: bold;
+  font-size: 16px;
+  color: #000;
+}
+
+.product-price {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+}
