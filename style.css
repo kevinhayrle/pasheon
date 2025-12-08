@@ -569,6 +569,27 @@ margin-top: 50px;
 .product-price {
   display: flex;
   gap: 6px;
-  justify-content: flex-start;
+  justify-content: center;
   align-items: center;
+}
+
+.product-detail-price {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 16px;
+  justify-content: flex-start; /* aligns properly */
+}
+
+.product-detail-price .old-price {
+  text-decoration: line-through;
+  color: #888;
+  font-size: 14px;
+}
+
+.product-detail-price .new-price {
+  font-weight: bold;
+  font-size: 18px;
+  color: #000;
 }
