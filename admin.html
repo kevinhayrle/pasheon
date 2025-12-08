@@ -285,22 +285,23 @@ function editProduct(
   price,
   discounted_price,
   category,
+  sort_order,
   image,
   description,
   sizes,
-  extra_images,
-  sort_order
+  extra_images
 ) {
   document.getElementById("editingId").value = id;
   document.getElementById("name").value = name;
   document.getElementById("price").value = price;
   document.getElementById("discounted_price").value = discounted_price || "";
   document.getElementById("category").value = category;
+   document.getElementById("sort_order").value = sort_order || 0;   // ✅ THIS IS THE MOST IMPORTANT LINE
   document.getElementById("image").value = image || "";
   document.getElementById("description").value = description || "";
   document.getElementById("sizes").value = sizes.join(',');
   document.getElementById("extraImages").value = extra_images.join(',');
-  document.getElementById("sort_order").value = sort_order || 0;   // ✅ THIS IS THE MOST IMPORTANT LINE
+  
 }
 
 
@@ -326,8 +327,20 @@ function editProduct(
           </span><br>
           <span class="product-category">Category: ${p.category}</span>
         </div>
-        <div class="action-btns">
-          <button class="edit-btn" onclick='editProduct(${JSON.stringify(p.id)}, ${JSON.stringify(p.name)}, ${JSON.stringify(p.price)}, ${JSON.stringify(p.discounted_price)}, ${JSON.stringify(p.category)}, ${JSON.stringify(p.image_url)}, ${JSON.stringify(p.description)}, ${JSON.stringify(p.sizes)}, ${JSON.stringify(p.extra_images)})'>Edit</button>
+       <div class="action-btns">
+  <button class="edit-btn" onclick='editProduct(
+    ${JSON.stringify(p.id)},
+    ${JSON.stringify(p.name)},
+    ${JSON.stringify(p.price)},
+    ${JSON.stringify(p.discounted_price)},
+    ${JSON.stringify(p.category)},
+    ${JSON.stringify(p.sort_order)},    // ✅ ADD THIS LINE
+    ${JSON.stringify(p.image_url)},
+    ${JSON.stringify(p.description)},
+    ${JSON.stringify(p.sizes)},
+    ${JSON.stringify(p.extra_images)}
+  )'>Edit</button>
+
           <button class="delete-btn" onclick="deleteProduct('${p.id}')">Delete</button>
         </div>`;
       list.appendChild(div);
