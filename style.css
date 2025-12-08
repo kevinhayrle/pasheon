@@ -558,19 +558,18 @@ margin-top: 50px;
   text-decoration: line-through;
   color: #888;
   font-size: 14px;
-  margin-right: -50px;
 }
 
 .new-price {
   font-weight: bold;
   font-size: 16px;
   color: #000;
-  margin-right: -50px;
 }
 
 .product-price {
   display: flex;
   gap: 6px;
-  justify-content: center;
-  align-items: center;
+  justify-content: left;
+  align-items: left;
+  margin-right: 50px;
 }
