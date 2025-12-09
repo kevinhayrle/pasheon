@@ -6,12 +6,7 @@
   <link rel="icon" href="favicon.ico" type="image/x-icon">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: sans-serif;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
 
     body {
       background: #f8f8f8;
@@ -34,7 +29,6 @@
       margin-bottom: 20px;
       font-size: 1.6rem;
       color: #01381C;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
     input, textarea {
@@ -44,37 +38,20 @@
       border: 1px solid #ccc;
       border-radius: 6px;
       font-size: 1rem;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
-    textarea {
-      resize: vertical;
-      min-height: 80px;
-    }
+    textarea { resize: vertical; min-height: 80px; }
 
     #cart-summary {
-
       margin-top: 10px;
       padding: 14px;
       background: #f0f0f0;
       border-radius: 6px;
     }
 
-    #cart-summary h2 {
-      font-size: 1.1rem;
-      margin-bottom: 10px;
-    }
-
-    #cart-items li {
-      margin-bottom: 6px;
-      font-size: 0.95rem;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
-    #total-amount {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      font-weight: bold;
-    }
+    #cart-summary h2 { font-size: 1.1rem; margin-bottom: 10px; }
+    #cart-items li { margin-bottom: 6px; font-size: 0.95rem; }
+    #total-amount { font-weight: bold; }
 
     button#pay-now {
       width: 100%;
@@ -83,127 +60,115 @@
       color: white;
       font-size: 1rem;
       border: none;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       border-radius: 6px;
       cursor: pointer;
       margin-top: 20px;
-      transition: background 0.2s ease;
-    }
-
-    button#pay-now:hover {
-      background: #000;
-    }
-
-    @media (max-width: 500px) {
-      .checkout-container {
-        padding: 16px;
-      }
-
-      h1 {
-        font-size: 1.4rem;
-      }
     }
   </style>
 </head>
+
 <body>
-  <div class="checkout-container">
-    <h1>CHECKOUT</h1>
-    
-    <form id="checkout-form">
-      <input type="text" id="name" placeholder="Name" required />
-      <input type="email" id="email" placeholder="Email" required />
-      <input type="tel" id="phone" placeholder="Phone Number" required />
-      <textarea id="address" placeholder="Address" required></textarea>
-      
-      <div id="cart-summary">
-        <h2>Cart Summary</h2>
-        <ul id="cart-items"></ul>
-        <p><strong>Total:</strong> ₹<span id="total-amount">0</span></p>
-      </div>
+<div class="checkout-container">
+  <h1>CHECKOUT</h1>
 
-      <button type="submit" id="pay-now">Pay Now</button>
-    </form>
-  </div>
+  <form id="checkout-form">
+    <input type="text" id="name" placeholder="Name" required />
+    <input type="email" id="email" placeholder="Email" required />
+    <input type="tel" id="phone" placeholder="Phone Number" required />
+    <textarea id="address" placeholder="Address" required></textarea>
 
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-  <script>
-  const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-  const cartItemsContainer = document.getElementById('cart-items');
-  const totalAmountEl = document.getElementById('total-amount');
-  const form = document.getElementById('checkout-form');
+    <div id="cart-summary">
+      <h2>Cart Summary</h2>
+      <ul id="cart-items"></ul>
+      <p><strong>Total:</strong> ₹<span id="total-amount">0</span></p>
+    </div>
 
-  let total = 0;
-  cart.forEach(item => {
-    const li = document.createElement('li');
-    li.textContent = `${item.name} | Size - (${item.size}) | Quantity - ${item.quantity} | ₹${item.price * item.quantity}`;
-    cartItemsContainer.appendChild(li);
-    total += item.price * item.quantity;
+    <button type="submit" id="pay-now">Pay Now</button>
+  </form>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+const finalAmount = localStorage.getItem('finalAmount');
+const cartItemsContainer = document.getElementById('cart-items');
+const totalAmountEl = document.getElementById('total-amount');
+const form = document.getElementById('checkout-form');
+
+/* ✅ SHOW CART ITEMS (UNCHANGED) */
+cart.forEach(item => {
+  const li = document.createElement('li');
+  li.textContent = `${item.name} | Size - (${item.size}) | Quantity - ${item.quantity} | ₹${item.price * item.quantity}`;
+  cartItemsContainer.appendChild(li);
+});
+
+/* ✅ FINAL TOTAL LOGIC (THIS IS THE FIX) */
+let total;
+if (finalAmount) {
+  total = Number(finalAmount);
+} else {
+  total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+}
+
+totalAmountEl.textContent = total;
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const name = document.getElementById('name').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const address = document.getElementById('address').value.trim();
+
+  const totalInPaisa = Math.max(100, Math.round(total * 100));
+
+  const orderRes = await fetch("https://pasheon-backend-zgz5.onrender.com/api/checkout/create-order", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ total_amount: totalInPaisa })
   });
-  totalAmountEl.textContent = total;
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  const orderData = await orderRes.json();
 
-    const name = document.getElementById('name').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const phone = document.getElementById('phone').value.trim();
-    const address = document.getElementById('address').value.trim();
+  const options = {
+    key: "rzp_live_ypzGdjBX41LSWB",
+    amount: orderData.amount,
+    currency: "INR",
+    name: "Pasheon",
+    description: "Order Payment",
+    order_id: orderData.id,
+    handler: async function (response) {
 
+      const finalOrder = {
+        name,
+        email,
+        phone,
+        address,
+        cart,
+        payment: response.razorpay_payment_id,
+        total_amount: totalInPaisa
+      };
 
-    const totalInPaisa = Math.max(100, Math.round(total * 100)); 
-    console.log("💰 Total in ₹:", total);
-    console.log("💰 Total in paisa sent to backend:", totalInPaisa);
+      const res = await fetch("https://pasheon-backend-zgz5.onrender.com/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(finalOrder)
+      });
 
-  
-    const orderRes = await fetch("https://pasheon-backend-zgz5.onrender.com/api/checkout/create-order", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ total_amount: totalInPaisa })
-    });
+      if (res.ok) {
+        localStorage.removeItem('cart');
+        localStorage.removeItem('finalAmount'); // ✅ IMPORTANT
+        window.location.href = "order-success.html";
+      } else {
+        alert("Payment successful, but order saving failed.");
+      }
+    },
+    prefill: { name, email, contact: phone },
+    theme: { color: "#01381C" }
+  };
 
-    const orderData = await orderRes.json();
-    console.log("🧾 Razorpay Order Response:", orderData);
-
-    const options = {
-      key: "rzp_live_ypzGdjBX41LSWB",
-      amount: orderData.amount,
-      currency: "INR",
-      name: "Pasheon",
-      description: "Order Payment",
-      order_id: orderData.id,
-      handler: async function (response) {
-        console.log("✅ Payment Successful:", response);
-
-        const finalOrder = {
-          name,
-          email,
-          phone,
-          address,
-          cart,
-          payment: response.razorpay_payment_id,
-          total_amount: totalInPaisa
-        };
-
-        const res = await fetch("https://pasheon-backend-zgz5.onrender.com/api/checkout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(finalOrder)
-        });
-
-        if (res.ok) {
-         window.location.href = "order-success.html";
-          localStorage.removeItem('cart');
-        } else {
-          alert("Payment successful, but order saving failed. Contact support.");
-        }
-      },
-      prefill: { name, email, contact: phone },
-      theme: { color: "#01381C" }
-    };
-
-    const rzp = new Razorpay(options);
-    rzp.open();
-  });
+  new Razorpay(options).open();
+});
 </script>
 </body>
 </html>
