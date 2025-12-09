@@ -89,7 +89,7 @@
       justify-content: space-between;
       border-bottom: 1px solid #ddd;
       padding: 1rem 0;
-      cursor: move; /* ✅ added */
+      cursor: move;
     }
 
     .delete-btn {
@@ -231,13 +231,13 @@ async function saveOrder() {
     sort_order: i + 1
   }));
 
-  await fetch(`${API}/admin/products/reorder`, {
+  await fetch(`${API}/products/reorder`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`
     },
-    body: JSON.stringify({ order })
+    body: JSON.stringify(order)
   });
 }
 
