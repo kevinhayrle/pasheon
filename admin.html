@@ -138,7 +138,7 @@
       <div class="form-group"><input id="sizes" placeholder="Sizes (comma separated)"></div>
       <div class="form-group"><input id="extraImages" placeholder="Extra Image URLs"></div>
 
-      <button class="btn">Save Product</button>
+      <button class="btn" type="submit">Save Product</button>
     </form>
   </div>
 
@@ -167,7 +167,7 @@
       <div class="form-group"><input id="max_discount" type="number" placeholder="Max Discount"></div>
       <div class="form-group"><input id="expiry_date" type="date"></div>
 
-      <button class="btn">Add Coupon</button>
+      <button class="btn" type="submit">Add Coupon</button>
     </form>
   </div>
 
@@ -182,7 +182,136 @@
 const API = "https://pasheon-backend-zgz5.onrender.com/api";
 const token = localStorage.getItem("adminToken");
 
-/* ================== COUPONS ================== */
+/* ================== PRODUCT LOGIC (RESTORED) ================== */
+
+const form = document.getElementById("productForm");
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const id = document.getElementById("editingId").value;
+  const name = document.getElementById("name").value;
+  const price = document.getElementById("price").value;
+  const discounted_price = document.getElementById("discounted_price").value || null;
+  const sort_order = Number(document.getElementById("sort_order").value) || 0;
+  const category = document.getElementById("category").value;
+  const image_url = document.getElementById("image").value;
+  const description = document.getElementById("description").value;
+  const sizes = document.getElementById("sizes").value
+    ? document.getElementById("sizes").value.split(',').map(s => s.trim())
+    : [];
+  const extra_images = document.getElementById("extraImages").value
+    ? document.getElementById("extraImages").value.split(',').map(s => s.trim())
+    : [];
+
+  const productData = {
+    name,
+    price,
+    discounted_price,
+    sort_order,
+    category,
+    image_url,
+    description,
+    sizes,
+    extra_images
+  };
+
+  const endpoint = id ? `/admin/update/${id}` : "/admin/add";
+  const method = id ? "PUT" : "POST";
+
+  await fetch(`${API}${endpoint}`, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(productData),
+  });
+
+  form.reset();
+  document.getElementById("editingId").value = "";
+  fetchProducts();
+});
+
+function editProduct(
+  id,
+  name,
+  price,
+  discounted_price,
+  category,
+  sort_order,
+  image,
+  description,
+  sizes,
+  extra_images
+) {
+  document.getElementById("editingId").value = id;
+  document.getElementById("name").value = name;
+  document.getElementById("price").value = price;
+  document.getElementById("discounted_price").value = discounted_price || "";
+  document.getElementById("category").value = category;
+  document.getElementById("sort_order").value = sort_order ?? "";
+  document.getElementById("image").value = image || "";
+  document.getElementById("description").value = description || "";
+  document.getElementById("sizes").value = Array.isArray(sizes) ? sizes.join(',') : "";
+  document.getElementById("extraImages").value = Array.isArray(extra_images) ? extra_images.join(',') : "";
+}
+
+async function fetchProducts() {
+  const res = await fetch(`${API}/admin/products`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+
+  const list = document.getElementById("productList");
+  list.innerHTML = "";
+
+  data
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+    .forEach(p => {
+      const div = document.createElement("div");
+      div.className = "product";
+      div.innerHTML = `
+        <div class="product-info">
+          <span class="product-name">${p.name}</span><br>
+          <span class="product-price">
+            ${
+              p.discounted_price
+                ? `<s>₹${p.price}</s> ₹${p.discounted_price}`
+                : `₹${p.price}`
+            }
+          </span><br>
+          <span class="product-category">Category: ${p.category}</span>
+        </div>
+        <div class="action-btns">
+          <button class="edit-btn" onclick='editProduct(
+            ${JSON.stringify(p.id)},
+            ${JSON.stringify(p.name)},
+            ${JSON.stringify(p.price)},
+            ${JSON.stringify(p.discounted_price)},
+            ${JSON.stringify(p.category)},
+            ${JSON.stringify(p.sort_order)},
+            ${JSON.stringify(p.image_url)},
+            ${JSON.stringify(p.description)},
+            ${JSON.stringify(p.sizes)},
+            ${JSON.stringify(p.extra_images)}
+          )'>Edit</button>
+          <button class="delete-btn" onclick="deleteProduct('${p.id}')">Delete</button>
+        </div>
+      `;
+      list.appendChild(div);
+    });
+}
+
+function deleteProduct(id) {
+  fetch(`${API}/admin/delete/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  }).then(fetchProducts);
+}
+
+/* ================== COUPON LOGIC (YOUR WORKING CODE, UNTOUCHED) ================== */
+
 document.getElementById("couponForm").addEventListener("submit", async e => {
   e.preventDefault();
 
@@ -238,6 +367,8 @@ function logout() {
   location.href = "admin-login.html";
 }
 
+/* INITIAL LOADS */
+fetchProducts();
 fetchCoupons();
 </script>
 
