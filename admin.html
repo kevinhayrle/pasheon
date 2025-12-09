@@ -89,7 +89,7 @@
       justify-content: space-between;
       border-bottom: 1px solid #ddd;
       padding: 1rem 0;
-      cursor: move;
+      cursor: move; /* ✅ added */
     }
 
     .delete-btn {
@@ -123,10 +123,12 @@
 <div class="main">
   <h1>Pasheon Admin Dashboard</h1>
 
+  <!-- PRODUCT FORM -->
   <div class="container">
     <form id="productForm">
       <h2>Add / Edit Product</h2>
       <input type="hidden" id="editingId">
+
       <div class="form-group"><input id="name" placeholder="Product Name"></div>
       <div class="form-group"><input id="price" type="number" placeholder="Price"></div>
       <div class="form-group"><input id="discounted_price" type="number" placeholder="Discounted Price"></div>
@@ -136,20 +138,49 @@
       <div class="form-group"><input id="image" placeholder="Image URL"></div>
       <div class="form-group"><input id="sizes" placeholder="Sizes (comma separated)"></div>
       <div class="form-group"><input id="extraImages" placeholder="Extra Image URLs"></div>
+
       <button class="btn" type="submit">Save Product</button>
     </form>
   </div>
 
+  <!-- PRODUCTS LIST -->
   <div class="container">
-    <h2>All Products (Drag & Drop Enabled)</h2>
+    <h2>All Products (Drag to reorder)</h2>
     <div id="productList"></div>
+  </div>
+
+  <!-- COUPONS -->
+  <div class="container">
+    <h2>Coupon Management</h2>
+    <form id="couponForm">
+      <div class="form-group"><input id="coupon_code" placeholder="Coupon Code"></div>
+      <div class="form-group">
+        <select id="discount_type">
+          <option value="percentage">Percentage</option>
+          <option value="flat">Flat</option>
+        </select>
+      </div>
+      <div class="form-group"><input id="discount_value" type="number" placeholder="Discount Value"></div>
+      <div class="form-group"><input id="min_cart_value" type="number" placeholder="Minimum Cart Value"></div>
+      <div class="form-group"><input id="max_discount" type="number" placeholder="Max Discount"></div>
+      <div class="form-group"><input id="expiry_date" type="date"></div>
+      <button class="btn" type="submit">Add Coupon</button>
+    </form>
+  </div>
+
+  <div class="container">
+    <h2>All Coupons</h2>
+    <div id="couponList"></div>
   </div>
 </div>
 
 <script>
 const API = "https://pasheon-backend-zgz5.onrender.com/api";
 const token = localStorage.getItem("adminToken");
-let draggedItem = null;
+
+let dragged = null;
+
+/* ---------------- PRODUCTS ---------------- */
 
 async function fetchProducts() {
   const res = await fetch(`${API}/admin/products`, {
@@ -175,25 +206,15 @@ async function fetchProducts() {
         </div>
         <div>
           <button class="edit-btn">Edit</button>
-          <button class="delete-btn">Delete</button>
+          <button class="delete-btn" onclick="deleteProduct('${p.id}')">Delete</button>
         </div>
       `;
 
-      div.addEventListener("dragstart", () => {
-        draggedItem = div;
-        div.style.opacity = "0.5";
-      });
-
-      div.addEventListener("dragend", () => {
-        draggedItem = null;
-        div.style.opacity = "1";
-      });
-
+      div.addEventListener("dragstart", () => dragged = div);
       div.addEventListener("dragover", e => e.preventDefault());
-
       div.addEventListener("drop", () => {
-        if (draggedItem && draggedItem !== div) {
-          list.insertBefore(draggedItem, div);
+        if (dragged && dragged !== div) {
+          list.insertBefore(dragged, div);
           saveOrder();
         }
       });
@@ -205,9 +226,9 @@ async function fetchProducts() {
 async function saveOrder() {
   const items = document.querySelectorAll("#productList .product");
 
-  const ordered = Array.from(items).map((el, index) => ({
+  const order = Array.from(items).map((el, i) => ({
     id: el.dataset.id,
-    sort_order: index + 1
+    sort_order: i + 1
   }));
 
   await fetch(`${API}/admin/products/reorder`, {
@@ -216,8 +237,64 @@ async function saveOrder() {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`
     },
-    body: JSON.stringify(ordered)
+    body: JSON.stringify({ order })
   });
+}
+
+function deleteProduct(id) {
+  fetch(`${API}/admin/delete/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  }).then(fetchProducts);
+}
+
+/* ---------------- COUPONS ---------------- */
+
+document.getElementById("couponForm").addEventListener("submit", async e => {
+  e.preventDefault();
+
+  await fetch(`${API}/admin/coupons/add`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      coupon_code: coupon_code.value,
+      discount_type: discount_type.value,
+      discount_value: discount_value.value,
+      min_cart_value: min_cart_value.value || 0,
+      max_discount: max_discount.value || null,
+      expiry_date: expiry_date.value || null
+    })
+  });
+
+  e.target.reset();
+  fetchCoupons();
+});
+
+async function fetchCoupons() {
+  const res = await fetch(`${API}/admin/coupons`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const data = await res.json();
+
+  couponList.innerHTML = "";
+  data.forEach(c => {
+    couponList.innerHTML += `
+      <div class="product">
+        <div><b>${c.coupon_code}</b></div>
+        <button class="delete-btn" onclick="deleteCoupon('${c.id}')">Delete</button>
+      </div>
+    `;
+  });
+}
+
+function deleteCoupon(id) {
+  fetch(`${API}/admin/coupons/delete/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` }
+  }).then(fetchCoupons);
 }
 
 function logout() {
@@ -225,7 +302,9 @@ function logout() {
   location.href = "admin-login.html";
 }
 
+/* INIT */
 fetchProducts();
+fetchCoupons();
 </script>
 
 </body>
