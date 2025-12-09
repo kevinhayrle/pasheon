@@ -89,6 +89,7 @@
       justify-content: space-between;
       border-bottom: 1px solid #ddd;
       padding: 1rem 0;
+      cursor: move;
     }
 
     .delete-btn {
@@ -122,12 +123,10 @@
 <div class="main">
   <h1>Pasheon Admin Dashboard</h1>
 
-  <!-- ================== PRODUCT FORM ================== -->
   <div class="container">
     <form id="productForm">
       <h2>Add / Edit Product</h2>
       <input type="hidden" id="editingId">
-
       <div class="form-group"><input id="name" placeholder="Product Name"></div>
       <div class="form-group"><input id="price" type="number" placeholder="Price"></div>
       <div class="form-group"><input id="discounted_price" type="number" placeholder="Discounted Price"></div>
@@ -137,125 +136,20 @@
       <div class="form-group"><input id="image" placeholder="Image URL"></div>
       <div class="form-group"><input id="sizes" placeholder="Sizes (comma separated)"></div>
       <div class="form-group"><input id="extraImages" placeholder="Extra Image URLs"></div>
-
       <button class="btn" type="submit">Save Product</button>
     </form>
   </div>
 
-  <!-- ================== PRODUCTS LIST ================== -->
   <div class="container">
-    <h2>All Products</h2>
+    <h2>All Products (Drag & Drop Enabled)</h2>
     <div id="productList"></div>
-  </div>
-
-  <!-- ================== COUPON FORM ================== -->
-  <div class="container">
-    <h2>Coupon Management</h2>
-
-    <form id="couponForm">
-      <div class="form-group"><input id="coupon_code" placeholder="Coupon Code"></div>
-
-      <div class="form-group">
-        <select id="discount_type">
-          <option value="percentage">Percentage</option>
-          <option value="flat">Flat</option>
-        </select>
-      </div>
-
-      <div class="form-group"><input id="discount_value" type="number" placeholder="Discount Value"></div>
-      <div class="form-group"><input id="min_cart_value" type="number" placeholder="Minimum Cart Value"></div>
-      <div class="form-group"><input id="max_discount" type="number" placeholder="Max Discount"></div>
-      <div class="form-group"><input id="expiry_date" type="date"></div>
-
-      <button class="btn" type="submit">Add Coupon</button>
-    </form>
-  </div>
-
-  <!-- ================== COUPON LIST ================== -->
-  <div class="container">
-    <h2>All Coupons</h2>
-    <div id="couponList"></div>
   </div>
 </div>
 
 <script>
 const API = "https://pasheon-backend-zgz5.onrender.com/api";
 const token = localStorage.getItem("adminToken");
-
-/* ================== PRODUCT LOGIC (RESTORED) ================== */
-
-const form = document.getElementById("productForm");
-
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const id = document.getElementById("editingId").value;
-  const name = document.getElementById("name").value;
-  const price = document.getElementById("price").value;
-  const discounted_price = document.getElementById("discounted_price").value || null;
-  const sort_order = Number(document.getElementById("sort_order").value) || 0;
-  const category = document.getElementById("category").value;
-  const image_url = document.getElementById("image").value;
-  const description = document.getElementById("description").value;
-  const sizes = document.getElementById("sizes").value
-    ? document.getElementById("sizes").value.split(',').map(s => s.trim())
-    : [];
-  const extra_images = document.getElementById("extraImages").value
-    ? document.getElementById("extraImages").value.split(',').map(s => s.trim())
-    : [];
-
-  const productData = {
-    name,
-    price,
-    discounted_price,
-    sort_order,
-    category,
-    image_url,
-    description,
-    sizes,
-    extra_images
-  };
-
-  const endpoint = id ? `/admin/update/${id}` : "/admin/add";
-  const method = id ? "PUT" : "POST";
-
-  await fetch(`${API}${endpoint}`, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(productData),
-  });
-
-  form.reset();
-  document.getElementById("editingId").value = "";
-  fetchProducts();
-});
-
-function editProduct(
-  id,
-  name,
-  price,
-  discounted_price,
-  category,
-  sort_order,
-  image,
-  description,
-  sizes,
-  extra_images
-) {
-  document.getElementById("editingId").value = id;
-  document.getElementById("name").value = name;
-  document.getElementById("price").value = price;
-  document.getElementById("discounted_price").value = discounted_price || "";
-  document.getElementById("category").value = category;
-  document.getElementById("sort_order").value = sort_order ?? "";
-  document.getElementById("image").value = image || "";
-  document.getElementById("description").value = description || "";
-  document.getElementById("sizes").value = Array.isArray(sizes) ? sizes.join(',') : "";
-  document.getElementById("extraImages").value = Array.isArray(extra_images) ? extra_images.join(',') : "";
-}
+let draggedItem = null;
 
 async function fetchProducts() {
   const res = await fetch(`${API}/admin/products`, {
@@ -271,95 +165,59 @@ async function fetchProducts() {
     .forEach(p => {
       const div = document.createElement("div");
       div.className = "product";
+      div.draggable = true;
+      div.dataset.id = p.id;
+
       div.innerHTML = `
-        <div class="product-info">
-          <span class="product-name">${p.name}</span><br>
-          <span class="product-price">
-            ${
-              p.discounted_price
-                ? `<s>₹${p.price}</s> ₹${p.discounted_price}`
-                : `₹${p.price}`
-            }
-          </span><br>
-          <span class="product-category">Category: ${p.category}</span>
+        <div>
+          <b>${p.name}</b><br>
+          ₹${p.discounted_price || p.price}
         </div>
-        <div class="action-btns">
-          <button class="edit-btn" onclick='editProduct(
-            ${JSON.stringify(p.id)},
-            ${JSON.stringify(p.name)},
-            ${JSON.stringify(p.price)},
-            ${JSON.stringify(p.discounted_price)},
-            ${JSON.stringify(p.category)},
-            ${JSON.stringify(p.sort_order)},
-            ${JSON.stringify(p.image_url)},
-            ${JSON.stringify(p.description)},
-            ${JSON.stringify(p.sizes)},
-            ${JSON.stringify(p.extra_images)}
-          )'>Edit</button>
-          <button class="delete-btn" onclick="deleteProduct('${p.id}')">Delete</button>
+        <div>
+          <button class="edit-btn">Edit</button>
+          <button class="delete-btn">Delete</button>
         </div>
       `;
+
+      div.addEventListener("dragstart", () => {
+        draggedItem = div;
+        div.style.opacity = "0.5";
+      });
+
+      div.addEventListener("dragend", () => {
+        draggedItem = null;
+        div.style.opacity = "1";
+      });
+
+      div.addEventListener("dragover", e => e.preventDefault());
+
+      div.addEventListener("drop", () => {
+        if (draggedItem && draggedItem !== div) {
+          list.insertBefore(draggedItem, div);
+          saveOrder();
+        }
+      });
+
       list.appendChild(div);
     });
 }
 
-function deleteProduct(id) {
-  fetch(`${API}/admin/delete/${id}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
-  }).then(fetchProducts);
-}
+async function saveOrder() {
+  const items = document.querySelectorAll("#productList .product");
 
-/* ================== COUPON LOGIC (YOUR WORKING CODE, UNTOUCHED) ================== */
+  const ordered = Array.from(items).map((el, index) => ({
+    id: el.dataset.id,
+    sort_order: index + 1
+  }));
 
-document.getElementById("couponForm").addEventListener("submit", async e => {
-  e.preventDefault();
-
-  await fetch(`${API}/admin/coupons/add`, {
-    method: "POST",
+  await fetch(`${API}/admin/products/reorder`, {
+    method: "PUT",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`
     },
-    body: JSON.stringify({
-      coupon_code: coupon_code.value,
-      discount_type: discount_type.value,
-      discount_value: discount_value.value,
-      min_cart_value: min_cart_value.value || 0,
-      max_discount: max_discount.value || null,
-      expiry_date: expiry_date.value || null
-    })
+    body: JSON.stringify(ordered)
   });
-
-  e.target.reset();
-  fetchCoupons();
-});
-
-async function fetchCoupons() {
-  const res = await fetch(`${API}/admin/coupons`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  const data = await res.json();
-
-  couponList.innerHTML = "";
-  data.forEach(c => {
-    couponList.innerHTML += `
-      <div class="product">
-        <div>
-          <b>${c.coupon_code}</b><br>
-          ${c.discount_type === "percentage" ? c.discount_value + "%" : "₹" + c.discount_value}
-        </div>
-        <button class="delete-btn" onclick="deleteCoupon('${c.id}')">Delete</button>
-      </div>
-    `;
-  });
-}
-
-function deleteCoupon(id) {
-  fetch(`${API}/admin/coupons/delete/${id}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` }
-  }).then(fetchCoupons);
 }
 
 function logout() {
@@ -367,9 +225,7 @@ function logout() {
   location.href = "admin-login.html";
 }
 
-/* INITIAL LOADS */
 fetchProducts();
-fetchCoupons();
 </script>
 
 </body>
