@@ -385,6 +385,18 @@ document.getElementById("couponForm").addEventListener("submit", async (e) => {
   couponForm.reset();
   fetchCoupons();
 });
+async function deleteProduct(id) {
+  if (!confirm("Delete this product?")) return;
+
+  await fetch(`${API}/admin/products/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  fetchProducts();
+}
 
 /* EXISTING CALLS */
 fetchProducts();
