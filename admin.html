@@ -182,17 +182,15 @@
 const API = "https://pasheon-backend-zgz5.onrender.com/api";
 const token = localStorage.getItem("adminToken");
 
-let draggedItem = null;
+/* ================= PRODUCTS ================= */
 
-/* PRODUCTS */
 async function fetchProducts() {
   const res = await fetch(`${API}/admin/products`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${token}` }
   });
   const data = await res.json();
 
-  const list = document.getElementById("productList");
-  list.innerHTML = "";
+  productList.innerHTML = "";
 
   data.forEach(p => {
     const div = document.createElement("div");
@@ -206,27 +204,78 @@ async function fetchProducts() {
         ${p.discounted_price ? `<s>₹${p.price}</s> ₹${p.discounted_price}` : `₹${p.price}`}
       </div>
       <div>
-        <button class="edit-btn" onclick='editProduct(
-          ${JSON.stringify(p.id)},
-          ${JSON.stringify(p.name)},
-          ${JSON.stringify(p.price)},
-          ${JSON.stringify(p.discounted_price)},
-          ${JSON.stringify(p.category)},
-          ${JSON.stringify(p.sort_order)},
-          ${JSON.stringify(p.image_url)},
-          ${JSON.stringify(p.description)},
-          ${JSON.stringify(p.sizes)},
-          ${JSON.stringify(p.extra_images)}
-        )'>Edit</button>
-        <button class="delete-btn" onclick="deleteProduct('${p.id}')">Delete</button>
+        <button class="edit-btn" onclick='editProduct(${JSON.stringify(p)})'>Edit</button>
+        <button class="delete-btn" onclick="deleteProduct(${p.id})">Delete</button>
       </div>
     `;
 
-    list.appendChild(div);
+    productList.appendChild(div);
   });
 }
 
+/* ADD / UPDATE PRODUCT */
+productForm.addEventListener("submit", async e => {
+  e.preventDefault();
+
+  const payload = {
+    name: name.value,
+    price: Number(price.value),
+    discounted_price: discounted_price.value || null,
+    sort_order: sort_order.value || 0,
+    category: category.value,
+    description: description.value,
+    image_url: image.value,
+    sizes: sizes.value,
+    extra_images: extraImages.value
+  };
+
+  const id = editingId.value;
+  const url = id ? `${API}/admin/products/${id}` : `${API}/admin/products`;
+  const method = id ? "PUT" : "POST";
+
+  await fetch(url, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(payload)
+  });
+
+  productForm.reset();
+  editingId.value = "";
+  fetchProducts();
+});
+
+/* EDIT */
+function editProduct(p) {
+  editingId.value = p.id;
+  name.value = p.name;
+  price.value = p.price;
+  discounted_price.value = p.discounted_price || "";
+  sort_order.value = p.sort_order || 0;
+  category.value = p.category;
+  description.value = p.description;
+  image.value = p.image_url;
+  sizes.value = Array.isArray(p.sizes) ? p.sizes.join(",") : p.sizes;
+  extraImages.value = p.extra_images ? p.extra_images.join(",") : "";
+}
+
+/* DELETE */
+async function deleteProduct(id) {
+  if (!confirm("Delete this product?")) return;
+
+  await fetch(`${API}/admin/products/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  fetchProducts();
+}
+
 /* DRAG & DROP */
+let draggedItem = null;
+
 document.addEventListener("dragstart", e => {
   if (e.target.classList.contains("product")) {
     draggedItem = e.target;
@@ -245,18 +294,14 @@ document.addEventListener("dragover", e => {
   e.preventDefault();
   const target = e.target.closest(".product");
   if (target && target !== draggedItem) {
-    const list = document.getElementById("productList");
-    list.insertBefore(draggedItem, target);
+    productList.insertBefore(draggedItem, target);
   }
 });
 
-/* SAVE ORDER */
 async function saveOrder() {
-  const items = [...document.querySelectorAll(".product")];
-
-  const payload = items.map((item, index) => ({
-    id: item.dataset.id,
-    sort_order: index + 1
+  const payload = [...document.querySelectorAll(".product")].map((el, i) => ({
+    id: el.dataset.id,
+    sort_order: i + 1
   }));
 
   await fetch(`${API}/admin/products/reorder`, {
@@ -269,7 +314,58 @@ async function saveOrder() {
   });
 }
 
-/* EXISTING CALLS */
+/* ================= COUPONS ================= */
+
+async function fetchCoupons() {
+  const res = await fetch(`${API}/admin/coupons`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const data = await res.json();
+
+  couponList.innerHTML = "";
+  data.forEach(c => {
+    couponList.innerHTML += `
+      <div>
+        <b>${c.coupon_code}</b>
+        <button onclick="deleteCoupon(${c.id})">Delete</button>
+      </div>
+    `;
+  });
+}
+
+couponForm.addEventListener("submit", async e => {
+  e.preventDefault();
+
+  await fetch(`${API}/admin/coupons/add`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      coupon_code: coupon_code.value,
+      discount_type: discount_type.value,
+      discount_value: Number(discount_value.value),
+      min_cart_value: Number(min_cart_value.value),
+      max_discount: Number(max_discount.value),
+      expiry_date: expiry_date.value
+    })
+  });
+
+  couponForm.reset();
+  fetchCoupons();
+});
+
+async function deleteCoupon(id) {
+  await fetch(`${API}/admin/coupons/delete/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  fetchCoupons();
+}
+
+/* INIT */
 fetchProducts();
 fetchCoupons();
 </script>
