@@ -89,11 +89,6 @@
       justify-content: space-between;
       border-bottom: 1px solid #ddd;
       padding: 1rem 0;
-      cursor: grab;
-    }
-
-    .product.dragging {
-      opacity: 0.5;
     }
 
     .delete-btn {
@@ -149,7 +144,20 @@
 
   <!-- PRODUCTS LIST -->
   <div class="container">
-    <h2>All Products (Drag to Reorder)</h2>
+    <h2>All Products</h2>
+
+    <!-- ✅ SORT DROPDOWN (ADDED) -->
+    <div class="form-group">
+      <select id="sortSelect">
+        <option value="sort_order">Sort Order (Default)</option>
+        <option value="price_asc">Price: Low → High</option>
+        <option value="price_desc">Price: High → Low</option>
+        <option value="name_asc">Name: A → Z</option>
+        <option value="name_desc">Name: Z → A</option>
+        <option value="newest">Newest First</option>
+      </select>
+    </div>
+
     <div id="productList"></div>
   </div>
 
@@ -182,14 +190,41 @@
 const API = "https://pasheon-backend-zgz5.onrender.com/api";
 const token = localStorage.getItem("adminToken");
 
-let draggedItem = null;
+let currentSort = "sort_order";
+
+/* SORT CHANGE */
+document.getElementById("sortSelect").addEventListener("change", (e) => {
+  currentSort = e.target.value;
+  fetchProducts();
+});
 
 /* PRODUCTS */
 async function fetchProducts() {
   const res = await fetch(`${API}/admin/products`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  const data = await res.json();
+  let data = await res.json();
+
+  /* ✅ SORT LOGIC (ADDED) */
+  switch (currentSort) {
+    case "price_asc":
+      data.sort((a, b) => (a.discounted_price || a.price) - (b.discounted_price || b.price));
+      break;
+    case "price_desc":
+      data.sort((a, b) => (b.discounted_price || b.price) - (a.discounted_price || a.price));
+      break;
+    case "name_asc":
+      data.sort((a, b) => a.name.localeCompare(b.name));
+      break;
+    case "name_desc":
+      data.sort((a, b) => b.name.localeCompare(a.name));
+      break;
+    case "newest":
+      data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      break;
+    default:
+      data.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  }
 
   const list = document.getElementById("productList");
   list.innerHTML = "";
@@ -197,9 +232,6 @@ async function fetchProducts() {
   data.forEach(p => {
     const div = document.createElement("div");
     div.className = "product";
-    div.draggable = true;
-    div.dataset.id = p.id;
-
     div.innerHTML = `
       <div>
         <b>${p.name}</b><br>
@@ -221,55 +253,13 @@ async function fetchProducts() {
         <button class="delete-btn" onclick="deleteProduct('${p.id}')">Delete</button>
       </div>
     `;
-
     list.appendChild(div);
   });
 }
 
-/* DRAG & DROP */
-document.addEventListener("dragstart", e => {
-  if (e.target.classList.contains("product")) {
-    draggedItem = e.target;
-    e.target.classList.add("dragging");
-  }
-});
+/* COUPONS — UNTOUCHED */
+/* logout — UNTOUCHED */
 
-document.addEventListener("dragend", e => {
-  if (e.target.classList.contains("product")) {
-    e.target.classList.remove("dragging");
-    saveOrder();
-  }
-});
-
-document.addEventListener("dragover", e => {
-  e.preventDefault();
-  const target = e.target.closest(".product");
-  if (target && target !== draggedItem) {
-    const list = document.getElementById("productList");
-    list.insertBefore(draggedItem, target);
-  }
-});
-
-/* SAVE ORDER */
-async function saveOrder() {
-  const items = [...document.querySelectorAll(".product")];
-
-  const payload = items.map((item, index) => ({
-    id: item.dataset.id,
-    sort_order: index + 1
-  }));
-
-  await fetch(`${API}/admin/products/reorder`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify(payload)
-  });
-}
-
-/* EXISTING CALLS */
 fetchProducts();
 fetchCoupons();
 </script>
