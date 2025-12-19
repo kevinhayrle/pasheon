@@ -398,6 +398,11 @@ async function deleteProduct(id) {
   fetchProducts();
 }
 
+function logout() {
+  localStorage.removeItem("adminToken");
+  window.location.href = "admin-login.html"; // change if your login page name differs
+}
+
 /* EXISTING CALLS */
 fetchProducts();
 fetchCoupons();
