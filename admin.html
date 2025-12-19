@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pasheon Admin Dashboard</title>
   <link rel="icon" href="favicon.ico" type="image/x-icon">
+
   <style>
     @font-face {
       font-family: 'copper';
@@ -34,26 +35,10 @@
       text-align: center;
     }
 
-    .logout-btn {
-      padding: 10px;
-      background-color: #c0392b;
-      border: none;
-      border-radius: 5px;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
     .main {
       margin-left: 200px;
       width: calc(100% - 200px);
       padding: 2rem;
-    }
-
-    h1 {
-      font-family: 'copper', serif;
-      text-align: center;
-      color: #01381C;
     }
 
     .container {
@@ -92,27 +77,21 @@
       cursor: grab;
     }
 
-    .product.dragging {
-      opacity: 0.5;
+    .edit-btn {
+      background: #2980b9;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      margin-right: 5px;
+      cursor: pointer;
     }
 
     .delete-btn {
       background: #c0392b;
-      border: none;
       color: white;
-      padding: 6px 12px;
-      cursor: pointer;
-      border-radius: 4px;
-    }
-
-    .edit-btn {
-      background: #2980b9;
       border: none;
-      color: white;
-      padding: 6px 12px;
+      padding: 6px 10px;
       cursor: pointer;
-      border-radius: 4px;
-      margin-right: 5px;
     }
   </style>
 </head>
@@ -121,7 +100,6 @@
 
 <div class="sidebar">
   <h2>ADMIN</h2>
-  <button class="logout-btn" onclick="logout()">Logout</button>
 </div>
 
 <div class="main">
@@ -139,9 +117,9 @@
       <div class="form-group"><input id="sort_order" type="number" placeholder="Sort Order"></div>
       <div class="form-group"><input id="category" placeholder="Category"></div>
       <div class="form-group"><input id="description" placeholder="Description"></div>
-      <div class="form-group"><input id="image" placeholder="Image URL"></div>
+      <div class="form-group"><input id="image" placeholder="Main Image URL"></div>
       <div class="form-group"><input id="sizes" placeholder="Sizes (comma separated)"></div>
-      <div class="form-group"><input id="extraImages" placeholder="Extra Image URLs"></div>
+      <div class="form-group"><input id="extraImages" placeholder="Extra Image URLs (comma separated)"></div>
 
       <button class="btn" type="submit">Save Product</button>
     </form>
@@ -149,7 +127,7 @@
 
   <!-- PRODUCTS LIST -->
   <div class="container">
-    <h2>All Products (Drag to Reorder)</h2>
+    <h2>All Products</h2>
     <div id="productList"></div>
   </div>
 
@@ -157,23 +135,14 @@
   <div class="container">
     <h2>Coupon Management</h2>
     <form id="couponForm">
-      <div class="form-group"><input id="coupon_code" placeholder="Coupon Code"></div>
-      <div class="form-group">
-        <select id="discount_type">
-          <option value="percentage">Percentage</option>
-          <option value="flat">Flat</option>
-        </select>
-      </div>
-      <div class="form-group"><input id="discount_value" type="number" placeholder="Discount Value"></div>
-      <div class="form-group"><input id="min_cart_value" type="number" placeholder="Minimum Cart Value"></div>
-      <div class="form-group"><input id="max_discount" type="number" placeholder="Max Discount"></div>
-      <div class="form-group"><input id="expiry_date" type="date"></div>
-      <button class="btn" type="submit">Add Coupon</button>
+      <input id="coupon_code" placeholder="Coupon Code"><br><br>
+      <select id="discount_type">
+        <option value="percentage">Percentage</option>
+        <option value="flat">Flat</option>
+      </select><br><br>
+      <input id="discount_value" type="number" placeholder="Discount Value"><br><br>
+      <button class="btn">Add Coupon</button>
     </form>
-  </div>
-
-  <div class="container">
-    <h2>All Coupons</h2>
     <div id="couponList"></div>
   </div>
 </div>
@@ -188,23 +157,19 @@ async function fetchProducts() {
   const res = await fetch(`${API}/admin/products`, {
     headers: { Authorization: `Bearer ${token}` }
   });
-  const data = await res.json();
+  const products = await res.json();
 
   productList.innerHTML = "";
 
-  data.forEach(p => {
+  products.forEach(p => {
     const div = document.createElement("div");
     div.className = "product";
-    div.draggable = true;
     div.dataset.id = p.id;
 
     div.innerHTML = `
+      <div><b>${p.name}</b></div>
       <div>
-        <b>${p.name}</b><br>
-        ${p.discounted_price ? `<s>₹${p.price}</s> ₹${p.discounted_price}` : `₹${p.price}`}
-      </div>
-      <div>
-        <button class="edit-btn" onclick='editProduct(${JSON.stringify(p)})'>Edit</button>
+        <button class="edit-btn" onclick="editProduct(${p.id})">Edit</button>
         <button class="delete-btn" onclick="deleteProduct(${p.id})">Delete</button>
       </div>
     `;
@@ -247,8 +212,13 @@ productForm.addEventListener("submit", async e => {
   fetchProducts();
 });
 
-/* EDIT */
-function editProduct(p) {
+/* EDIT PRODUCT */
+async function editProduct(id) {
+  const res = await fetch(`${API}/admin/products/${id}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const p = await res.json();
+
   editingId.value = p.id;
   name.value = p.name;
   price.value = p.price;
@@ -257,13 +227,13 @@ function editProduct(p) {
   category.value = p.category;
   description.value = p.description;
   image.value = p.image_url;
-  sizes.value = Array.isArray(p.sizes) ? p.sizes.join(",") : p.sizes;
+  sizes.value = p.sizes ? p.sizes.join(",") : "";
   extraImages.value = p.extra_images ? p.extra_images.join(",") : "";
 }
 
-/* DELETE */
+/* DELETE PRODUCT */
 async function deleteProduct(id) {
-  if (!confirm("Delete this product?")) return;
+  if (!confirm("Delete product?")) return;
 
   await fetch(`${API}/admin/products/${id}`, {
     method: "DELETE",
@@ -273,60 +243,19 @@ async function deleteProduct(id) {
   fetchProducts();
 }
 
-/* DRAG & DROP */
-let draggedItem = null;
-
-document.addEventListener("dragstart", e => {
-  if (e.target.classList.contains("product")) {
-    draggedItem = e.target;
-    e.target.classList.add("dragging");
-  }
-});
-
-document.addEventListener("dragend", e => {
-  if (e.target.classList.contains("product")) {
-    e.target.classList.remove("dragging");
-    saveOrder();
-  }
-});
-
-document.addEventListener("dragover", e => {
-  e.preventDefault();
-  const target = e.target.closest(".product");
-  if (target && target !== draggedItem) {
-    productList.insertBefore(draggedItem, target);
-  }
-});
-
-async function saveOrder() {
-  const payload = [...document.querySelectorAll(".product")].map((el, i) => ({
-    id: el.dataset.id,
-    sort_order: i + 1
-  }));
-
-  await fetch(`${API}/admin/products/reorder`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify(payload)
-  });
-}
-
 /* ================= COUPONS ================= */
 
 async function fetchCoupons() {
   const res = await fetch(`${API}/admin/coupons`, {
     headers: { Authorization: `Bearer ${token}` }
   });
-  const data = await res.json();
+  const coupons = await res.json();
 
   couponList.innerHTML = "";
-  data.forEach(c => {
+  coupons.forEach(c => {
     couponList.innerHTML += `
       <div>
-        <b>${c.coupon_code}</b>
+        ${c.coupon_code}
         <button onclick="deleteCoupon(${c.id})">Delete</button>
       </div>
     `;
@@ -345,10 +274,7 @@ couponForm.addEventListener("submit", async e => {
     body: JSON.stringify({
       coupon_code: coupon_code.value,
       discount_type: discount_type.value,
-      discount_value: Number(discount_value.value),
-      min_cart_value: Number(min_cart_value.value),
-      max_discount: Number(max_discount.value),
-      expiry_date: expiry_date.value
+      discount_value: Number(discount_value.value)
     })
   });
 
@@ -361,7 +287,6 @@ async function deleteCoupon(id) {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` }
   });
-
   fetchCoupons();
 }
 
