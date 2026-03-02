@@ -26,7 +26,7 @@ git push
 
 # Developer
 **Kevin Antony**  
-*Full-stack Developer & Creator of Pasheon*   
+*Full-stack Developer & System Architect of Pasheon*   
 
 # License
 Frontend code © 2025 **Kevin Antony**  
